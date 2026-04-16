@@ -337,20 +337,21 @@ def _what_happened(scenario: ValidationScenario, artifact: RunArtifact | None) -
                 f"- VSEE: consensus={vsee_cons or 'n/a'}, "
                 f"verified_crossref={vsee_xr or 0}, verified_domain={vsee_dm or 0}"
             )
-        # Verification sub-signals
+        # Backend self-verification (DeBERTa NLI) — distinct from independent judge
         payload_v = (artifact.snapshot_response or {}).get("verification") or {}
         if isinstance(payload_v, dict):
             cd = payload_v.get("claim_details")
             if isinstance(cd, list) and cd:
-                n_v = sum(1 for c in cd if isinstance(c, dict) and c.get("verified"))
-                rows.append(f"- Claim verification: {n_v}/{len(cd)} claims verified")
+                n_v = sum(1 for c in cd if isinstance(c, dict) and c.get("status") == "verified")
+                rows.append(f"- Backend NLI verification (DeBERTa): {n_v}/{len(cd)} claims entailed")
             misattr = payload_v.get("misattribution_analysis") or {}
-            if isinstance(misattr, dict) and misattr.get("misattribution_count"):
-                rows.append(f"- Misattributions: {misattr['misattribution_count']}")
+            mc = int(misattr.get("misattribution_count") or 0) if isinstance(misattr, dict) else 0
+            if mc:
+                rows.append(f"- Backend misattributions: {mc}")
             num_h = payload_v.get("numerical_hallucinations") or {}
-            nh_c = num_h.get("count") or num_h.get("numerical_hallucination_count") or 0
+            nh_c = int(num_h.get("count") or num_h.get("numerical_hallucination_count") or 0)
             if nh_c:
-                rows.append(f"- Numerical hallucinations: {nh_c}")
+                rows.append(f"- Backend numerical hallucinations: {nh_c}")
         # Errors / fallbacks
         errs = metrics.get("errors") or []
         fbs = metrics.get("fallbacks_used") or []

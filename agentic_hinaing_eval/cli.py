@@ -467,6 +467,16 @@ def _apply_llm_judge(
                 ),
                 prefix="judge",
             )
+        elif isinstance(verdict, dict) and "_meta" in verdict:
+            meta = verdict.get("_meta", {})
+            err = meta.get("error") or meta.get("parse_error") or "unknown"
+            attempts = meta.get("attempts", "?")
+            run.independent_grading = verdict
+            log(
+                f"[{idx}/{len(runs)}] judge FAILED after {attempts} attempt(s) "
+                + kv(scenario=run.scenario_id, elapsed_s=elapsed, error=str(err)[:120]),
+                prefix="judge",
+            )
         else:
             log(
                 f"[{idx}/{len(runs)}] judge no-verdict {kv(scenario=run.scenario_id, elapsed_s=elapsed)}",

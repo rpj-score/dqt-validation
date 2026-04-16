@@ -310,14 +310,13 @@ def _score_groundedness(scenario: ValidationScenario, artifact: RunArtifact) -> 
     else:
         issues.append("No faithfulness verification report was present.")
 
-    # --- Verification sub-signals (available regardless of judge) ---
+    # --- Verification sub-signals (backend DeBERTa NLI — not independent) ---
     if isinstance(verification, dict):
-        # Claim details — per-claim breakdown from FaithfulnessAgent
         claim_details = verification.get("claim_details")
         if isinstance(claim_details, list) and claim_details:
             n_claims = len(claim_details)
-            n_verified = sum(1 for c in claim_details if isinstance(c, dict) and c.get("verified"))
-            evidence.append(f"Claim-level detail: {n_verified}/{n_claims} claims verified by FaithfulnessAgent.")
+            n_verified = sum(1 for c in claim_details if isinstance(c, dict) and c.get("status") == "verified")
+            evidence.append(f"Backend NLI (DeBERTa): {n_verified}/{n_claims} claims entailed.")
 
         # Misattribution — claims true but cited to the wrong source
         misattr = verification.get("misattribution_analysis")
